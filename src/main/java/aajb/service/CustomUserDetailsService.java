@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import aajb.domain.user.User;
-import aajb.domain.user.UserProfile;
+import aajb.domain.user.UserProfileType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -41,11 +41,11 @@ public class CustomUserDetailsService implements UserDetailsService{
     private List<GrantedAuthority> getGrantedAuthorities(User user){
         List<GrantedAuthority> authorities = new ArrayList<>();
 
-        for(UserProfile userProfile : user.getUserProfiles()){
-            System.out.println("UserProfile : "+userProfile);
-            authorities.add(new SimpleGrantedAuthority("ROLE_"+userProfile.getType()));
+        for(UserProfileType userProfile : user.getUserProfiles()){
+            System.out.println("UserProfileType : "+userProfile);
+            authorities.add(new SimpleGrantedAuthority("ROLE_"+userProfile.getUserProfileType()));
         }
-        System.out.print("authorities :"+authorities);
+        System.out.println("authorities :"+authorities);
         return authorities;
     }
 

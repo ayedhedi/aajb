@@ -22,6 +22,7 @@ public class ParentController {
     @RequestMapping(method = RequestMethod.GET, value = "/static")
     public Parent getStatic() {
         Parent p = new Parent();
+        p.setLogin("static_login");
         p.setFirstName("static_fistName");
         p.setLastName("static_lastName");
         p.setId(124556);

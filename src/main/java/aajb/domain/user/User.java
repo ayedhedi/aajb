@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Email;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlElement;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,15 +28,16 @@ public class User extends Person{
 
     @Email
     @Column(nullable=false)
+    @XmlElement(required = true)
     private String email;
 
     @Column(nullable=false)
     private String state=State.ACTIVE.getState();
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinTable(joinColumns = { @JoinColumn(name = "USER_ID") },
-            inverseJoinColumns = { @JoinColumn(name = "USER_PROFILE_ID") })
-    private Set<UserProfile> userProfiles = new HashSet<>();
+    @ElementCollection(targetClass = UserProfileType.class)
+    @JoinTable(name = "user_profiles", joinColumns = @JoinColumn(name = "userID"))
+    @Enumerated(EnumType.STRING)
+    private Set<UserProfileType> userProfiles = new HashSet<>();
 
 
 }

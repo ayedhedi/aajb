@@ -1,8 +1,7 @@
 package aajb.runnable;
 
-import aajb.dao.repository.UserRepository;
-import aajb.domain.user.User;
-import aajb.domain.user.UserProfile;
+import aajb.dao.repository.ParentRepository;
+import aajb.domain.school.Parent;
 import aajb.domain.user.UserProfileType;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
@@ -28,19 +27,20 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
 
     public static void main(String[] args) {
         SpringApplication.run(InitUserDatabaseApp.class, args);
-        UserRepository userRepository = applicationContext.getBean(UserRepository.class);
+        ParentRepository parentRepository = applicationContext.getBean(ParentRepository.class);
+
         Environment environment = applicationContext.getEnvironment();
 
         String initUsersData = environment.getProperty("users.initData");
         Arrays.asList(initUsersData.split(";")).stream().filter(user ->
-                userRepository.findByLogin(user.split(",")[2])==null) .forEach(userString -> {
+                parentRepository.findByLogin(user.split(",")[2])==null) .forEach(userString -> {
             String[] userSplit = userString.split(",");
             UserProfileType[] types = null;
             if (userSplit.length>4){
                 types = getTypes(Arrays.copyOfRange(userSplit,5,userSplit.length));
             }
-            User user = createUser(userSplit[0],userSplit[1],userSplit[2],userSplit[3],userSplit[4],types);
-            userRepository.save(user);
+            Parent parent = createParent(userSplit[0], userSplit[1], userSplit[2], userSplit[3], userSplit[4], types);
+            parentRepository.save(parent);
         });
 
     }
@@ -68,22 +68,20 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
         return types.toArray(new UserProfileType[types.size()]);
     }
 
-    private static User createUser(String firstName,String lastName,String login, String password, String email,
+    private static Parent createParent(String firstName,String lastName,String login, String password, String email,
                                    UserProfileType... types) {
-        User user = new User();
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setLogin(login);
-        user.setPassword(password);
-        user.setEmail(email);
+        Parent parent = new Parent();
+        parent.setFirstName(firstName);
+        parent.setLastName(lastName);
+        parent.setLogin(login);
+        parent.setPassword(password);
+        parent.setEmail(email);
         if (types!=null && types.length>0) {
-            user.setUserProfiles(new HashSet<>());
+            parent.setUserProfiles(new HashSet<>());
             for(UserProfileType type:types) {
-                UserProfile up = new UserProfile();
-                up.setType(type.getUserProfileType());
-                user.getUserProfiles().add(up);
+                parent.getUserProfiles().add(type);
             }
         }
-        return user;
+        return parent;
     }
 }
