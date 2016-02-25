@@ -18,6 +18,7 @@ package aajb.domain.school;
 import aajb.domain.user.User;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -32,6 +33,7 @@ import javax.persistence.Entity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @DiscriminatorValue(value="PA")
+@ToString(callSuper = true)
 public class Parent extends User {
 
     private String tel;

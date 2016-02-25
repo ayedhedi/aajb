@@ -7,7 +7,6 @@ package aajb.domain.user;
 import aajb.domain.school.Person;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.validator.constraints.Email;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlElement;
@@ -26,7 +25,6 @@ public class User extends Person{
     @Column(nullable=false)
     private String password;
 
-    @Email
     @Column(nullable=false)
     @XmlElement(required = true)
     private String email;

@@ -16,8 +16,9 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private UserRepository userRepository;
 
-    public User findById(int id) {
-        return userRepository.findOne(id);
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public User findByLogin(String login) {

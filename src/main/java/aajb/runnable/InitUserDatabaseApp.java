@@ -43,6 +43,7 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
             parentRepository.save(parent);
         });
 
+        SpringApplication.exit(applicationContext);
     }
 
     @Override

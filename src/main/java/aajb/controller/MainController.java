@@ -1,21 +1,23 @@
 package aajb.controller;
 
-import aajb.dao.repository.ParentRepository;
 import aajb.domain.school.Parent;
-import aajb.domain.user.State;
-import aajb.domain.user.UserProfileType;
+import aajb.service.ParentService;
+import aajb.service.dto.ParentDto;
+import aajb.validator.ParentValidator;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by ayed.h on 22/02/2016.
@@ -26,115 +28,76 @@ public class MainController {
     Logger logger = Logger.getLogger(MainController.class.getSimpleName());
 
     @Autowired
-    Environment env;
+    private Environment env;
     @Autowired
-    private ParentRepository parentRepository;
+    private ParentService parentService;
+    @Qualifier("parentValidator")
+    @Autowired
+    private ParentValidator parentValidator;
 
 
-    @RequestMapping(value = "/version")
-    public Properties printProperty() {
-        Properties properties = new Properties();
-        properties.setProperty("version", env.getProperty("api.version"));
-        return properties;
+    @RequestMapping(method = RequestMethod.GET)
+    public HashMap<String,Object> login(
+            @RequestParam String login,
+            @RequestParam String password
+    ) {
+        logger.info("Getting login-in request: ("+login+", "+password+")");
+        return null;
     }
-
 
     /**
      * A non secure method used to ask the server to create a new Parent Account.
      * If the information given are correct the account will be create but have to be validated by the ADMIN
-     * @param parent a Json represents the parent account to create
+     * @param parentDto a Json represents the parent account to create
      * @return a Json of the
      */
     @RequestMapping(method = RequestMethod.POST, value = "/parent")
     public HashMap<String,Object> createParent(
-            @RequestBody Parent parent
+            @RequestBody ParentDto parentDto,
+            BindingResult validationResult
     ) {
-        //prepare the result
-        HashMap<String,Object> results = new HashMap<>();
+        logger.info("Got create parent request.");
+
+        //prepare the answer
+        HashMap<String, Object> results = new HashMap<>();
         results.put("version", env.getProperty("api.version"));
-        boolean status = true;
-        StringBuilder errors = new StringBuilder();
+        results.put("authors", env.getProperty("api.authors"));
+        results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
-        //check data
-        if (parent.getLogin()==null ||
-                !Pattern.compile(env.getProperty("pattern.login"))
-                        .matcher(parent.getLogin()).matches()) {
-            logger.info("Invalid Login name:"+parent.getLogin());
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.invalidLogin"));
-        }
+        Parent parent = parentService.convertFromDto(parentDto);
+        //validate the input data
+        parentValidator.validate(parent,validationResult);
 
-        if (parent.getPassword()==null ||
-                !Pattern.compile(env.getProperty("pattern.password"))
-                        .matcher(parent.getPassword()).matches()) {
-            logger.info("Invalid Password:"+parent.getPassword());
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.invalidPassword"));
-        }
-
-        if (parent.getFirstName()==null||
-                !Pattern.compile(env.getProperty("pattern.firstName"))
-                        .matcher(parent.getFirstName()).matches()) {
-            logger.info("Invalid First Name:"+parent.getFirstName());
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.invalidFirstName"));
-        }
-
-        if (parent.getLastName()==null||
-                !Pattern.compile(env.getProperty("pattern.lastName"))
-                        .matcher(parent.getLastName()).matches()) {
-            logger.info("Invalid Last Name:"+parent.getLastName());
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.invalidLastName"));
-        }
-
-        if (parent.getEmail()==null ||
-                !Pattern.compile(env.getProperty("pattern.email"))
-                    .matcher(parent.getEmail()).matches()) {
-            logger.info("Invalid Email:"+parent.getEmail());
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.invalidEmail"));
-        }
-
-        //check if the email exists
-        if (parent.getEmail()!=null && parentRepository.findByEmail(parent.getEmail())!=null) {
-            logger.info("The email:"+parent.getEmail()+" is already used ");
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.emailAlreadyInUse"));
-        }
-
-        //check if the login exists
-        if (parent.getLogin()!=null && parentRepository.findByLogin(parent.getLogin())!=null) {
-            logger.info("The Login:"+parent.getLogin()+" is already in use");
-            status = false;
-            errors.append(",").append(env.getProperty("api.errorcode.loginAlreadyInUse"));
-        }
-
-
-        if (!status) {
-            results.put("status","false");
-            results.put("errors",errors.toString().substring(1).split(","));
+        //check errors
+        if (validationResult.hasErrors()) {
+            results.put("status", "false");
+            List<String> errors = new ArrayList<>();
+            errors.addAll(validationResult.getAllErrors().stream().map(ObjectError::getCode).collect(Collectors.toList()));
+            results.put("errors", errors);
             return results;
         }else {
-            //No need of the Id
-            parent.setId(null);
-            //set account locked ---> to be unlocked by the manager
-            parent.setState(State.LOCKED.getState());
-            //set user profile USER
-            parent.setUserProfiles(new HashSet<>());
-            parent.getUserProfiles().add(UserProfileType.USER);
+            boolean save = parentService.createParent(parentDto);
 
-            parent = parentRepository.save(parent);
-            if (parent==null) {
-                results.put("status","false");
-                results.put("errors",env.getProperty("api.errorcode.internalError"));
-                results.put("message","Cannot save new Parent instance !!");
-                return  results;
+            if (save) {
+                //the object is now saved, return ok !!
+                results.put("status", "true");
+                results.put("message", "New Parent is now saved");
+                //get parent information
+                parentDto =  parentService.convertToDto(parentService.findByLogin(parent.getLogin()));
+                //hide the password
+                parentDto.setPassword(null);
+                results.put("parent",parentDto);
+                return results;
             }else {
-                results.put("status","true");
-                results.put("parent",parent);
+                //problem where saving the object
+                results.put("status", "false");
+                results.put("errors", env.getProperty("api.errorcode.internalError"));
+                results.put("message", "Cannot save new Parent instance !!");
                 return results;
             }
         }
     }
+
+
+    //public Properties
 }
