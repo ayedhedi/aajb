@@ -1,8 +1,9 @@
-package aajb.runnable;
+package aajb;
 
-import aajb.dao.repository.ParentRepository;
+import aajb.repository.ParentRepository;
 import aajb.domain.school.Parent;
 import aajb.domain.user.UserProfileType;
+import aajb.service.SecurityService;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,12 +25,14 @@ import java.util.List;
 public class InitUserDatabaseApp implements ApplicationContextAware {
 
     private static ApplicationContext applicationContext;
+    private static SecurityService securityService;
 
     public static void main(String[] args) {
         SpringApplication.run(InitUserDatabaseApp.class, args);
         ParentRepository parentRepository = applicationContext.getBean(ParentRepository.class);
 
         Environment environment = applicationContext.getEnvironment();
+        securityService = applicationContext.getBean(SecurityService.class);
 
         String initUsersData = environment.getProperty("users.initData");
         Arrays.asList(initUsersData.split(";")).stream().filter(user ->
@@ -75,7 +78,7 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
         parent.setFirstName(firstName);
         parent.setLastName(lastName);
         parent.setLogin(login);
-        parent.setPassword(password);
+        parent.setPassword(securityService.encryptPassword(password));
         parent.setEmail(email);
         if (types!=null && types.length>0) {
             parent.setUserProfiles(new HashSet<>());

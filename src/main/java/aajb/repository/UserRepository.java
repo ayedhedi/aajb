@@ -1,4 +1,4 @@
-package aajb.dao.repository;
+package aajb.repository;
 
 import aajb.domain.user.User;
 import org.springframework.data.jpa.repository.Query;
@@ -9,9 +9,9 @@ import org.springframework.data.repository.CrudRepository;
  */
 public interface UserRepository extends CrudRepository<User, Integer> {
 
-    @Query("SELECT u from User u where u.login=?1")
+    @Query("SELECT u from User u where u.login=?1 and u.state <> 'Deleted'")
     User findByLogin(String login);
 
-    @Query("SELECT u from User u where u.email=?1")
+    @Query("SELECT u from User u where u.email=?1 and u.state <> 'Deleted'")
     User findByEmail(String email);
 }

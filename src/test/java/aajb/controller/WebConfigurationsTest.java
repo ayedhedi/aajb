@@ -1,6 +1,6 @@
 package aajb.controller;
 
-import aajb.runnable.Application;
+import aajb.Application;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;

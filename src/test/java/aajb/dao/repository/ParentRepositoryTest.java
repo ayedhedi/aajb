@@ -2,7 +2,8 @@ package aajb.dao.repository;
 
 
 import aajb.domain.school.Parent;
-import aajb.runnable.Application;
+import aajb.Application;
+import aajb.repository.ParentRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

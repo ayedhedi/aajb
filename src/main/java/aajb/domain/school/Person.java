@@ -16,7 +16,9 @@
 package aajb.domain.school;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
@@ -34,6 +36,8 @@ import javax.persistence.*;
         discriminatorType=DiscriminatorType.STRING
 )
 @DiscriminatorValue(value="PE")
+@AllArgsConstructor
+@NoArgsConstructor
 public abstract class Person {
 
     @Id

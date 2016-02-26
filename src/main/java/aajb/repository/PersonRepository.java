@@ -1,4 +1,4 @@
-package aajb.dao.repository;
+package aajb.repository;
 
 import aajb.domain.school.Person;
 import org.springframework.data.repository.CrudRepository;

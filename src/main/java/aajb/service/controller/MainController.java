@@ -1,17 +1,24 @@
-package aajb.controller;
+package aajb.service.controller;
 
-import aajb.domain.school.Parent;
 import aajb.service.ParentService;
+import aajb.service.UserService;
 import aajb.service.dto.ParentDto;
-import aajb.validator.ParentValidator;
+import aajb.service.dto.UserDto;
+import aajb.service.exceptions.AccountLockedException;
+import aajb.service.exceptions.ApiException;
+import aajb.service.exceptions.InvalidDataException;
+import aajb.service.validator.ParentValidator;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -31,18 +38,55 @@ public class MainController {
     private Environment env;
     @Autowired
     private ParentService parentService;
-    @Qualifier("parentValidator")
+    @Qualifier("userService")
+    @Autowired
+    private UserService userService;
     @Autowired
     private ParentValidator parentValidator;
 
+    @InitBinder
+    protected void initBinder(WebDataBinder binder) {
+        binder.setValidator(parentValidator);
+    }
 
-    @RequestMapping(method = RequestMethod.GET)
+
+    @RequestMapping(method = RequestMethod.GET, value = "/login")
     public HashMap<String,Object> login(
             @RequestParam String login,
             @RequestParam String password
     ) {
-        logger.info("Getting login-in request: ("+login+", "+password+")");
-        return null;
+        logger.info("Getting login-in request: ("+login+")");
+        HashMap<String, Object> results = new HashMap<>();
+        results.put("version", env.getProperty("api.version"));
+        results.put("authors", env.getProperty("api.authors"));
+        results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+
+
+        UserDto userDto;
+
+        try {
+            userDto = userService.login(login,password);
+        } catch (ApiException e) {
+            logger.warn("Cannot create parent: "+e.getMessage());
+            results.put("status", "false");
+            results.put("errors", (new String[] {e.getErrorCode()}));
+            results.put("message", e.getMessage());
+            return results;
+        }
+
+
+
+        if (userDto == null) {
+            logger.info("login-in "+login+" failed !!");
+            results.put("status","false");
+            results.put("errors",(new String[] {env.getProperty("api.errorcode.loginOrPasswordIncorrect")}));
+        }else {
+            logger.info("Success login-in "+login+" !");
+            results.put("status","true");
+            results.put("user", userDto);
+        }
+
+        return results;
     }
 
     /**
@@ -53,7 +97,7 @@ public class MainController {
      */
     @RequestMapping(method = RequestMethod.POST, value = "/parent")
     public HashMap<String,Object> createParent(
-            @RequestBody ParentDto parentDto,
+            @RequestBody @Valid ParentDto parentDto,
             BindingResult validationResult
     ) {
         logger.info("Got create parent request.");
@@ -64,10 +108,6 @@ public class MainController {
         results.put("authors", env.getProperty("api.authors"));
         results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
-        Parent parent = parentService.convertFromDto(parentDto);
-        //validate the input data
-        parentValidator.validate(parent,validationResult);
-
         //check errors
         if (validationResult.hasErrors()) {
             results.put("status", "false");
@@ -76,23 +116,17 @@ public class MainController {
             results.put("errors", errors);
             return results;
         }else {
-            boolean save = parentService.createParent(parentDto);
-
-            if (save) {
-                //the object is now saved, return ok !!
+            try {
+                parentDto = parentService.createParent(parentDto);
                 results.put("status", "true");
                 results.put("message", "New Parent is now saved");
-                //get parent information
-                parentDto =  parentService.convertToDto(parentService.findByLogin(parent.getLogin()));
-                //hide the password
-                parentDto.setPassword(null);
                 results.put("parent",parentDto);
                 return results;
-            }else {
-                //problem where saving the object
+            } catch (InvalidDataException e) {
+                logger.warn("Cannot create parent: "+e.getMessage());
                 results.put("status", "false");
-                results.put("errors", env.getProperty("api.errorcode.internalError"));
-                results.put("message", "Cannot save new Parent instance !!");
+                results.put("errors", e.getErrorCode());
+                results.put("message", e.getMessage());
                 return results;
             }
         }

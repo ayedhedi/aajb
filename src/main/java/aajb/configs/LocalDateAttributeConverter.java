@@ -1,4 +1,4 @@
-package aajb.dao.configs;
+package aajb.configs;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;

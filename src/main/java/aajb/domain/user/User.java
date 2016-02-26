@@ -7,6 +7,7 @@ package aajb.domain.user;
 import aajb.domain.school.Person;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlElement;
@@ -17,6 +18,7 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @DiscriminatorValue(value="US")
+@ToString(callSuper = true)
 public class User extends Person{
 
     @Column(unique=true, nullable=false)
@@ -31,6 +33,8 @@ public class User extends Person{
 
     @Column(nullable=false)
     private String state=State.ACTIVE.getState();
+
+    private String activationCode;
 
     @ElementCollection(targetClass = UserProfileType.class)
     @JoinTable(name = "user_profiles", joinColumns = @JoinColumn(name = "userID"))

@@ -1,7 +1,7 @@
-package aajb.validator;
+package aajb.service.validator;
 
-import aajb.domain.school.Parent;
 import aajb.service.ParentService;
+import aajb.service.dto.ParentDto;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,12 +29,12 @@ public class ParentValidator implements Validator {
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return Parent.class.isAssignableFrom(clazz);
+        return ParentDto.class.isAssignableFrom(clazz);
     }
-
     @Override
+
     public void validate(Object target, Errors errors) {
-        Parent parent = (Parent) target;
+        ParentDto parent = (ParentDto) target;
         //check data
         if (parent.getLogin()==null ||
                 !Pattern.compile(env.getProperty("pattern.login"))

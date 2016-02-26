@@ -6,6 +6,7 @@ package aajb.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import aajb.repository.UserRepository;
 import aajb.domain.user.User;
 import aajb.domain.user.UserProfileType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomUserDetailsService implements UserDetailsService{
 
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
     @Transactional(readOnly=true)
     public UserDetails loadUserByUsername(String login)
             throws UsernameNotFoundException {
-        User user = userService.findByLogin(login);
+        User user = userRepository.findByLogin(login);
         System.out.println("User : "+user);
         if(user==null){
             System.out.println("User not found");

@@ -1,16 +1,19 @@
 package aajb.service;
 
-import aajb.dao.repository.ParentRepository;
-import aajb.dao.repository.UserRepository;
 import aajb.domain.school.Parent;
 import aajb.domain.user.State;
 import aajb.domain.user.UserProfileType;
+import aajb.repository.ParentRepository;
+import aajb.repository.UserRepository;
 import aajb.service.dto.ParentDto;
+import aajb.service.exceptions.InvalidDataException;
 import org.apache.log4j.Logger;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,85 +40,63 @@ public class ParentServiceImpl implements ParentService {
     @Autowired
     private SecurityServiceImpl securityService;
     @Autowired
-    private ModelMapper modelMapper;
-
-
-    @Override
-    public ParentDto convertToDto(Parent parent) {
-        return modelMapper.map(parent,ParentDto.class);
-    }
+    private JavaMailSender javaMailSender;
 
     @Override
-    public Parent convertFromDto(ParentDto parentDto) {
-        return modelMapper.map(parentDto, Parent.class);
-    }
+    public ParentDto createParent(ParentDto parentDto) throws InvalidDataException{
 
-    @Override
-    public boolean createParent(ParentDto parentDto) {
-
-        logger.info("Creating new Parent ... ");
+        logger.info("Creating new Parent ... "+parentDto.getFirstName());
 
         if (parentDto.getFirstName()==null || !Pattern.compile(env.getProperty("pattern.firstName"))
                 .matcher(parentDto.getFirstName()).matches()) {
             logger.warn("Incorrect first name: "+parentDto.getFirstName());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.invalidFirstName"),"Invalid First Name");
         }
 
         if (parentDto.getLastName()==null || !Pattern.compile(env.getProperty("pattern.lastName"))
                 .matcher(parentDto.getLastName()).matches()) {
             logger.warn("Incorrect last name: "+parentDto.getLastName());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.invalidLastName"),"Invalid Last Name");
         }
 
         if (parentDto.getLogin()==null || !Pattern.compile(env.getProperty("pattern.login"))
                 .matcher(parentDto.getLogin()).matches()) {
             logger.warn("Incorrect login: "+parentDto.getLogin());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.invalidLogin"),"Invalid Login");
         }
 
         if (parentDto.getPassword()==null || !Pattern.compile(env.getProperty("pattern.password"))
                 .matcher(parentDto.getPassword()).matches()) {
             logger.warn("Incorrect password: "+parentDto.getPassword());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.invalidPassword"),"Invalid Password");
         }
 
         if (parentDto.getEmail()==null || !Pattern.compile(env.getProperty("pattern.email"))
                 .matcher(parentDto.getEmail()).matches()) {
             logger.warn("Incorrect email: "+parentDto.getEmail());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.invalidEmail"),"Invalid email");
         }
 
         if (isEmailUsed(parentDto.getEmail())) {
             logger.warn("Email in use: "+parentDto.getEmail());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.emailAlreadyInUse"),"email used");
         }
 
         if (isLoginUser(parentDto.getLogin())) {
             logger.warn("Login in use: "+parentDto.getLogin());
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.loginAlreadyInUse"),"login used");
         }
+
+        //generate activation code
+        String code = securityService.generateMailCode();
 
         //encrypt the password
         String password = securityService.encryptPassword(parentDto.getPassword());
 
         //create the object
-        Parent parent = new Parent();
-        parent.setFirstName(parentDto.getFirstName());
-        parent.setLastName(parentDto.getLastName());
-        parent.setEmail(parentDto.getEmail());
+        Parent parent = ParentDto.asParent(parentDto);
         parent.setPassword(password);
-        parent.setLogin(parentDto.getLogin());
-        if (parentDto.getTel()!=null && !parentDto.getTel().isEmpty()) {
-            parent.setTel(parentDto.getTel());
-        }
-        if (parentDto.getTelGsm()!=null && !parentDto.getTelGsm().isEmpty()) {
-            parent.setTelGsm(parentDto.getTelGsm());
-        }
-        if (parentDto.getTelPro()!=null && !parentDto.getTelPro().isEmpty()) {
-            parent.setTelPro(parentDto.getTelPro());
-        }
-        parent.setSsn(parentDto.getSsn());
-        parent.setCaf(parentDto.getCaf());
+        parent.setActivationCode(code);
 
         //set account locked ---> to be unlocked by the manager
         parent.setState(State.LOCKED.getState());
@@ -128,10 +109,31 @@ public class ParentServiceImpl implements ParentService {
 
         if (parent!=null) {
             logger.info("New Parent has been created and saved id="+parent.getId());
-            return true;
+            parentDto.setId(parent.getId().toString());
+            parentDto.setPassword(null);
+
+            //generate activation code
+            sendEmail("ayed.h@sfeir.lu",code);
+
+            return parentDto;
         }else {
             logger.warn("Cannot save Object to Parent database !!");
-            return false;
+            throw new InvalidDataException(env.getProperty("api.errorcode.internalError"),"Internal Error");
+        }
+    }
+
+    @Async
+    private synchronized void sendEmail(String destination,String code) {
+        SimpleMailMessage simpleEmail = new SimpleMailMessage();
+        simpleEmail.setFrom(env.getProperty("mail.from"));
+        simpleEmail.setTo(destination);
+        simpleEmail.setSubject(env.getProperty("mail.title"));
+        simpleEmail.setText(env.getProperty("mail.content").replaceAll("@code",code));
+
+        try {
+            javaMailSender.send(simpleEmail);
+        }catch (Exception e) {
+            logger.warn("Cannot send activation email: "+e.getMessage());
         }
     }
 
@@ -145,8 +147,4 @@ public class ParentServiceImpl implements ParentService {
         return userRepository.findByLogin(login)!=null;
     }
 
-    @Override
-    public Parent findByLogin(String login) {
-        return parentRepository.findByLogin(login);
-    }
 }

@@ -5,4 +5,7 @@ package aajb.service;
  */
 public interface SecurityService {
     String encryptPassword(String password);
+    boolean isMatches(String password, String encoded);
+    String aesDecrypt(String encryptedString);
+    String generateMailCode();
 }

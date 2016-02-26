@@ -1,23 +1,16 @@
 package aajb.controller;
 
-import aajb.dao.repository.ParentRepository;
+import aajb.repository.ParentRepository;
 import aajb.domain.school.Parent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mifmif.common.regex.Generex;
-import org.databene.benerator.anno.Coverage;
 import org.databene.benerator.anno.InvocationCount;
 import org.databene.benerator.anno.Stochastic;
 import org.databene.feed4junit.Feeder;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.Assert;
 
 import javax.validation.constraints.NotNull;
