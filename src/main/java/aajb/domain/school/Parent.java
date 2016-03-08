@@ -15,13 +15,10 @@
  */
 package aajb.domain.school;
 
-import aajb.domain.user.User;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import javax.persistence.*;
+import java.util.Set;
 
 
 /**
@@ -30,17 +27,23 @@ import javax.persistence.Entity;
  * @author David Winterfeldt
  */
 @Entity
-@Data
-@EqualsAndHashCode(callSuper = true)
-@DiscriminatorValue(value="PA")
+@Getter
+@Setter
 @ToString(callSuper = true)
-public class Parent extends User {
+@NoArgsConstructor
+@PrimaryKeyJoinColumn(name="ID")
+public class Parent extends Person {
 
     private String tel;
     private String telGsm;
     private String telPro;
-    private long ssn;     //social security number
+    private long ssn;
     private int caf;
 
+    @Column(unique=true,nullable = false)
+    private String email;
+
+    @OneToMany(mappedBy = "firstParent",fetch = FetchType.LAZY)
+    private Set<Registration> registrations;
     
 }

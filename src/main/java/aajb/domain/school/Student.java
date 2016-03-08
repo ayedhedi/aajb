@@ -15,12 +15,12 @@
  */
 package aajb.domain.school;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
-import java.time.LocalDate;
-import java.util.Set;
+import java.util.Date;
 
 
 /**
@@ -29,24 +29,24 @@ import java.util.Set;
  * @author David Winterfeldt
  */
 @Entity
-@Data
-@EqualsAndHashCode(callSuper = true)
-@DiscriminatorValue(value="ST")
+@Getter
+@Setter
+@NoArgsConstructor
+@PrimaryKeyJoinColumn(name="ID")
 public class Student extends Person {
 
     private String className;
-    @Column
-    private LocalDate birthDate;
     private String remarks;
-    @ManyToOne(cascade = CascadeType.REFRESH)
-    private Parent firstParent;
-    @ManyToOne(cascade = CascadeType.REFRESH)
-    private Parent secondParent;
-    @ManyToMany
-    @JoinTable(name = "STUDENT_PARENTS",
-            joinColumns = {@JoinColumn(nullable = false, updatable = false, name = "STUDENT_ID")},
-            inverseJoinColumns = {@JoinColumn(nullable = false, updatable = false, name = "PARENT_ID")})
-    private Set<Parent> otherParents;
 
-    
+    @Column(nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date birthDate;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "FirstParent_ID")
+    private Parent firstParent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SecondParent_ID")
+    private Parent secondParent;
 }

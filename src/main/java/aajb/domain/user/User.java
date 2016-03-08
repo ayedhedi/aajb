@@ -5,36 +5,33 @@ package aajb.domain.user;
  */
 
 import aajb.domain.school.Person;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlElement;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
-@EqualsAndHashCode(callSuper = true)
-@DiscriminatorValue(value="US")
+@Getter
+@Setter
 @ToString(callSuper = true)
+@NoArgsConstructor
+@PrimaryKeyJoinColumn(name="ID")
 public class User extends Person{
 
-    @Column(unique=true, nullable=false)
+    @Column(unique=true,nullable = false)
     private String login;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private String password;
 
-    @Column(nullable=false)
-    @XmlElement(required = true)
+    @Column(unique=true,nullable = false)
     private String email;
 
-    @Column(nullable=false)
     private String state=State.ACTIVE.getState();
-
-    private String activationCode;
 
     @ElementCollection(targetClass = UserProfileType.class)
     @JoinTable(name = "user_profiles", joinColumns = @JoinColumn(name = "userID"))

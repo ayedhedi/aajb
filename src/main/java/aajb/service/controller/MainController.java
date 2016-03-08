@@ -1,30 +1,30 @@
 package aajb.service.controller;
 
+import aajb.domain.school.Parent;
 import aajb.service.ParentService;
-import aajb.service.UserService;
+import aajb.service.SecurityService;
+import aajb.service.SecurityServiceImpl;
 import aajb.service.dto.ParentDto;
-import aajb.service.dto.UserDto;
-import aajb.service.exceptions.AccountLockedException;
-import aajb.service.exceptions.ApiException;
-import aajb.service.exceptions.InvalidDataException;
 import aajb.service.validator.ParentValidator;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 
-import javax.validation.Valid;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by ayed.h on 22/02/2016.
@@ -38,11 +38,15 @@ public class MainController {
     private Environment env;
     @Autowired
     private ParentService parentService;
-    @Qualifier("userService")
-    @Autowired
-    private UserService userService;
     @Autowired
     private ParentValidator parentValidator;
+    @Qualifier("customUserDetailsService")
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Qualifier("securityService")
+    @Autowired
+    private SecurityService securityService;
+
 
     @InitBinder
     protected void initBinder(WebDataBinder binder) {
@@ -62,76 +66,75 @@ public class MainController {
         results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
 
-        UserDto userDto;
+        UserDetails userDetails = userDetailsService.loadUserByUsername(login);
 
-        try {
-            userDto = userService.login(login,password);
-        } catch (ApiException e) {
-            logger.warn("Cannot create parent: "+e.getMessage());
+        if (userDetails == null || !securityService.isMatches(password, userDetails.getPassword())) {
+            logger.warn("Cannot login-user: ");
             results.put("status", "false");
-            results.put("errors", (new String[] {e.getErrorCode()}));
-            results.put("message", e.getMessage());
+            results.put("errors", (new String[] {env.getProperty("api.errorcode.loginOrPasswordIncorrect")}));
             return results;
         }
 
 
+        Authentication auth =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        if (userDto == null) {
-            logger.info("login-in "+login+" failed !!");
-            results.put("status","false");
-            results.put("errors",(new String[] {env.getProperty("api.errorcode.loginOrPasswordIncorrect")}));
-        }else {
-            logger.info("Success login-in "+login+" !");
-            results.put("status","true");
-            results.put("user", userDto);
-        }
-
+        results.put("status", "true");
         return results;
     }
 
-    /**
-     * A non secure method used to ask the server to create a new Parent Account.
-     * If the information given are correct the account will be create but have to be validated by the ADMIN
-     * @param parentDto a Json represents the parent account to create
-     * @return a Json of the
-     */
-    @RequestMapping(method = RequestMethod.POST, value = "/parent")
-    public HashMap<String,Object> createParent(
-            @RequestBody @Valid ParentDto parentDto,
-            BindingResult validationResult
+    @RequestMapping(method = RequestMethod.GET, value = "/logout")
+    public HashMap<String,Object> logout(
+            HttpServletRequest request, HttpServletResponse response
     ) {
-        logger.info("Got create parent request.");
-
-        //prepare the answer
         HashMap<String, Object> results = new HashMap<>();
         results.put("version", env.getProperty("api.version"));
         results.put("authors", env.getProperty("api.authors"));
         results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
-        //check errors
-        if (validationResult.hasErrors()) {
-            results.put("status", "false");
-            List<String> errors = new ArrayList<>();
-            errors.addAll(validationResult.getAllErrors().stream().map(ObjectError::getCode).collect(Collectors.toList()));
-            results.put("errors", errors);
-            return results;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null){
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+            results.put("status","true");
         }else {
-            try {
-                parentDto = parentService.createParent(parentDto);
-                results.put("status", "true");
-                results.put("message", "New Parent is now saved");
-                results.put("parent",parentDto);
-                return results;
-            } catch (InvalidDataException e) {
-                logger.warn("Cannot create parent: "+e.getMessage());
-                results.put("status", "false");
-                results.put("errors", e.getErrorCode());
-                results.put("message", e.getMessage());
-                return results;
-            }
+            results.put("status","false");
         }
+
+
+        return results;
     }
 
 
-    //public Properties
+    /**
+     * TODO: Should be removed, this is only for testing ....
+     * @param email
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET,value = "/findByEmail")
+    public HashMap<String,Object> findByEmail(
+            @RequestParam String email
+    ) {
+        logger.info("Getting find parent by email request: "+email);
+        HashMap<String, Object> results = new HashMap<>();
+        results.put("version", env.getProperty("api.version"));
+        results.put("authors", env.getProperty("api.authors"));
+        results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+
+        if ("a@b.com".equals(email)) {
+            results.put("status","true");
+            return results;
+        }
+
+        Parent parent = parentService.findParentByEmail(email);
+        if (parent==null) {
+            results.put("status","false");
+        }else {
+            results.put("status","true");
+            results.put("parent", ParentDto.asParentDto(parent));
+        }
+
+        return results;
+    }
+
 }

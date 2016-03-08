@@ -9,6 +9,7 @@ import java.util.List;
 import aajb.repository.UserRepository;
 import aajb.domain.user.User;
 import aajb.domain.user.UserProfileType;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service("customUserDetailsService")
 public class CustomUserDetailsService implements UserDetailsService{
+    private static  final Logger logger = Logger.getLogger(CustomUserDetailsService.class.getSimpleName());
 
     @Autowired
     private UserRepository userRepository;
@@ -29,9 +31,9 @@ public class CustomUserDetailsService implements UserDetailsService{
     public UserDetails loadUserByUsername(String login)
             throws UsernameNotFoundException {
         User user = userRepository.findByLogin(login);
-        System.out.println("User : "+user);
+        logger.info("User : " + user);
         if(user==null){
-            System.out.println("User not found");
+            logger.info("User not found");
             throw new UsernameNotFoundException("Username not found");
         }
         return new org.springframework.security.core.userdetails.User(user.getLogin(), user.getPassword(),
@@ -43,10 +45,10 @@ public class CustomUserDetailsService implements UserDetailsService{
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         for(UserProfileType userProfile : user.getUserProfiles()){
-            System.out.println("UserProfileType : "+userProfile);
+            logger.info("UserProfileType : " + userProfile);
             authorities.add(new SimpleGrantedAuthority("ROLE_"+userProfile.getUserProfileType()));
         }
-        System.out.println("authorities :"+authorities);
+        logger.info("authorities :"+authorities);
         return authorities;
     }
 

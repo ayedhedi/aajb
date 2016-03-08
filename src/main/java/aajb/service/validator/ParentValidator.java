@@ -22,7 +22,6 @@ public class ParentValidator implements Validator {
     @Qualifier("environment")
     @Autowired
     private Environment env;
-    @Qualifier("parentService")
     @Autowired
     private ParentService parentService;
 
@@ -36,19 +35,6 @@ public class ParentValidator implements Validator {
     public void validate(Object target, Errors errors) {
         ParentDto parent = (ParentDto) target;
         //check data
-        if (parent.getLogin()==null ||
-                !Pattern.compile(env.getProperty("pattern.login"))
-                        .matcher(parent.getLogin()).matches()) {
-            logger.info("Invalid Login name:"+parent.getLogin());
-            errors.reject(env.getProperty("api.errorcode.invalidLogin"));
-        }
-
-        if (parent.getPassword()==null ||
-                !Pattern.compile(env.getProperty("pattern.password"))
-                        .matcher(parent.getPassword()).matches()) {
-            logger.info("Invalid Password:"+parent.getPassword());
-            errors.reject(env.getProperty("api.errorcode.invalidPassword"));
-        }
 
         if (parent.getFirstName()==null||
                 !Pattern.compile(env.getProperty("pattern.firstName"))
@@ -72,15 +58,10 @@ public class ParentValidator implements Validator {
         }
 
         //check if the email exists
-        if (parent.getEmail()!=null && parentService.isEmailUsed(parent.getEmail())) {
+        if (parent.getEmail()!=null && parentService.findParentByEmail(parent.getEmail())!=null) {
             logger.info("The email:"+parent.getEmail()+" is already used ");
             errors.reject(env.getProperty("api.errorcode.emailAlreadyInUse"));
         }
 
-        //check if the login exists
-        if (parent.getLogin()!=null && parentService.isLoginUser(parent.getLogin())) {
-            logger.info("The Login:"+parent.getLogin()+" is already in use");
-            errors.reject(env.getProperty("api.errorcode.loginAlreadyInUse"));
-        }
     }
 }

@@ -16,9 +16,10 @@
 package aajb.domain.school;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 
@@ -29,26 +30,24 @@ import javax.persistence.*;
  * @author David Winterfeldt
  */
 @Entity
-@Data
-@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(
-        name="discriminator",
-        discriminatorType=DiscriminatorType.STRING
-)
-@DiscriminatorValue(value="PE")
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@Inheritance(strategy=InheritanceType.JOINED)
+@Table(name = "person")
+@Where(clause = "active=1")
 public abstract class Person {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
     @Column(nullable=false)
     private String firstName;
     @Column(nullable=false)
     private String lastName;
+    @Enumerated (value = EnumType.STRING)
     private Gender gender = Gender.MALE;
-    @OneToOne(optional = true,cascade = CascadeType.ALL)
-    private Address address;
+    private String address;
+    private Boolean active;
 
 }

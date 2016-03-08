@@ -5,7 +5,6 @@ package aajb.domain.user;
  */
 public enum UserProfileType {
     USER("USER"),
-    DBA("DBA"),
     ADMIN("ADMIN");
 
     String userProfileType;
