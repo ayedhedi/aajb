@@ -12,6 +12,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -48,7 +49,8 @@ public class ParentController {
     @RequestMapping(method = RequestMethod.GET, value = "/paged")
     public HashMap<String, Object> getParentsPage(
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            HttpServletResponse response
     ){
         logger.info("Getting read parents request (pagination)");
         HashMap<String, Object> results = new HashMap<>();
@@ -67,6 +69,7 @@ public class ParentController {
 
         } catch (InvalidDataException e) {
             results.put("status", "false");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             logger.warn("Error: "+e.getMessage());
         }
 
@@ -75,7 +78,8 @@ public class ParentController {
 
     @RequestMapping(method = RequestMethod.POST)
     public HashMap<String, Object> createParent(
-            @RequestBody ParentDto parentDto
+            @RequestBody ParentDto parentDto,
+            HttpServletResponse response
     ) {
         logger.info("Getting create parent request: "+parentDto);
         HashMap<String, Object> results = new HashMap<>();
@@ -91,6 +95,7 @@ public class ParentController {
         } catch (ApiException e) {
             logger.warn("Cannot create parent Error:"+e.getMessage());
             results.put("status", "false");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             results.put("errors", (new String[] {e.getErrorCode()}));
             results.put("message", e.getMessage());
         }

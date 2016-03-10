@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -32,7 +33,8 @@ public class RegistrationController {
 
     @RequestMapping(method = RequestMethod.POST)
     public HashMap<String,Object> create(
-            @RequestBody RegistrationDto registrationDto
+            @RequestBody RegistrationDto registrationDto,
+            HttpServletResponse response
     ) {
         logger.info("Getting registration request: "+registrationDto);
         HashMap<String, Object> results = new HashMap<>();
@@ -48,6 +50,7 @@ public class RegistrationController {
         } catch (ApiException e) {
             logger.warn("Cannot create registration Error:"+e.getMessage());
             results.put("status", "false");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             results.put("errors", (new String[] {e.getErrorCode()}));
             results.put("message", e.getMessage());
         }
@@ -56,7 +59,9 @@ public class RegistrationController {
     }
 
     @RequestMapping(method = RequestMethod.DELETE)
-    public HashMap<String,Object> delete(@RequestParam int id) {
+    public HashMap<String,Object> delete(
+            @RequestParam int id,
+            HttpServletResponse response) {
         logger.info("Delete registration request: "+id);
         HashMap<String, Object> results = new HashMap<>();
         results.put("version", environment.getProperty("api.version"));
@@ -72,6 +77,7 @@ public class RegistrationController {
             results.put("status", "false");
             results.put("errors", (new String[] {e.getErrorCode()}));
             results.put("message", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
 
         return results;

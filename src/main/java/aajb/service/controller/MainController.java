@@ -58,7 +58,8 @@ public class MainController {
     @RequestMapping(method = RequestMethod.GET, value = "/login")
     public HashMap<String,Object> login(
             @RequestParam String login,
-            @RequestParam String password
+            @RequestParam String password,
+            HttpServletResponse response
     ) {
         logger.info("Getting login-in request: ("+login+")");
         HashMap<String, Object> results = new HashMap<>();
@@ -73,6 +74,7 @@ public class MainController {
             logger.warn("Cannot login-user: ");
             results.put("status", "false");
             results.put("errors", (new String[] {env.getProperty("api.errorcode.loginOrPasswordIncorrect")}));
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return results;
         }
 
@@ -108,41 +110,10 @@ public class MainController {
             new SecurityContextLogoutHandler().logout(request, response, auth);
             results.put("status","true");
         }else {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             results.put("status","false");
         }
 
-
-        return results;
-    }
-
-
-    /**
-     * TODO: Should be removed, this is only for testing ....
-     * @param email
-     * @return
-     */
-    @RequestMapping(method = RequestMethod.GET,value = "/findByEmail")
-    public HashMap<String,Object> findByEmail(
-            @RequestParam String email
-    ) {
-        logger.info("Getting find parent by email request: "+email);
-        HashMap<String, Object> results = new HashMap<>();
-        results.put("version", env.getProperty("api.version"));
-        results.put("authors", env.getProperty("api.authors"));
-        results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-
-        if ("a@b.com".equals(email)) {
-            results.put("status","true");
-            return results;
-        }
-
-        Parent parent = parentService.findParentByEmail(email);
-        if (parent==null) {
-            results.put("status","false");
-        }else {
-            results.put("status","true");
-            results.put("parent", ParentDto.asParentDto(parent));
-        }
 
         return results;
     }
