@@ -37,8 +37,9 @@ public class Parent extends Person {
     private String tel;
     private String telGsm;
     private String telPro;
-    private long ssn;
+    private String ssn;
     private int caf;
+    private String job;
 
     @Column(unique=true,nullable = false)
     private String email;

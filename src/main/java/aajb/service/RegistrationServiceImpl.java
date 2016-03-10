@@ -4,9 +4,11 @@ import aajb.domain.school.Parent;
 import aajb.domain.school.Registration;
 import aajb.domain.school.RegistrationState;
 import aajb.domain.school.Student;
+import aajb.domain.school.payment.Cheque;
 import aajb.repository.ParentRepository;
 import aajb.repository.RegistrationRepository;
 import aajb.repository.StudentRepository;
+import aajb.service.dto.ChequeDto;
 import aajb.service.dto.ParentDto;
 import aajb.service.dto.RegistrationDto;
 import aajb.service.dto.StudentDto;
@@ -15,10 +17,14 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +57,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     @Transactional(rollbackFor = {InvalidDataException.class, ParseException.class})
     public RegistrationDto createRegistration(RegistrationDto registrationDto) throws InvalidDataException {
 
@@ -126,9 +133,35 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
+        //find the logged user
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         //create the entity
         Registration registration = new Registration();
+
+        //create cheques if any
+        if (registrationDto.getCheques()!=null && !registrationDto.getCheques().isEmpty()){
+            registration.setCheques(new ArrayList<>());
+
+            for(ChequeDto chequeDto :registrationDto.getCheques()) {
+                //checks the cheque amount
+                if (chequeDto.getAmount() < 1 ) {
+                    logger.warn("Cheque amount is invalid: "+ chequeDto.getAmount());
+                    throw new InvalidDataException(environment.getProperty("api.errorcode.invalidCheckAmount"),
+                            "Invalid cheque amount !!");
+                }
+
+                //set Date
+                if (chequeDto.getAdjustableDate()==null) {
+                    chequeDto.setAdjustableDate(new Date());
+                }
+
+                Cheque cheque = ChequeDto.toCheck(chequeDto);
+                cheque.setAdjust(false);
+                cheque.setRegistration(registration);
+                registration.getCheques().add(cheque);
+            }
+        }
 
         //set the date & state
         registration.setDateTime(new Date());
@@ -140,6 +173,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (secondParent!=null) {
             registration.setSecondParent(secondParent);
         }
+
+        //set the user name
+        registration.setUserName(auth.getName());
 
         //save the entity
         registration = registrationRepository.save(registration);
@@ -159,6 +195,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         registration.setState(RegistrationState.DELETED);
-        registration = registrationRepository.save(registration);
+        registrationRepository.save(registration);
     }
 }

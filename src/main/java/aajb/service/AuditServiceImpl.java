@@ -2,9 +2,10 @@ package aajb.service;
 
 import aajb.domain.audit.Operation;
 import aajb.domain.audit.OperationType;
-import aajb.domain.user.User;
+import aajb.domain.school.Parent;
 import aajb.repository.OperationRepository;
 import aajb.repository.UserRepository;
+import aajb.service.dto.RegistrationDto;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -15,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -80,6 +80,54 @@ public class AuditServiceImpl implements AuditService {
         }else {
             operation.setContent("Fail log-out ");
         }
+        operationRepository.save(operation);
+    }
+
+    @Override
+    @AfterReturning(
+            pointcut = "execution(* aajb.service.RegistrationServiceImpl.createRegistration(..))",
+            returning = "result")
+    public void afterCreateRegistration(JoinPoint jp, Object result) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        RegistrationDto registration = (RegistrationDto)result;
+
+        Operation operation = new Operation();
+        operation.setType(OperationType.CREATE);
+        operation.setTime(new Date());
+        operation.setContent("Creation of new Registration id="+registration.getId());
+        operation.setUser(userRepository.findByLogin(auth.getName()));
+        operationRepository.save(operation);
+    }
+
+    @Override
+    @AfterReturning(
+            pointcut = "execution(* aajb.service.ParentServiceImpl.createParent(aajb.domain.school.Parent))",
+            returning = "result"
+    )
+    public void afterCreatingParent(JoinPoint jp, Object result) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Parent parent = (Parent)result;
+
+        Operation operation = new Operation();
+        operation.setType(OperationType.CREATE);
+        operation.setTime(new Date());
+        operation.setContent("Creation of new Parent id="+parent.getId());
+        operation.setUser(userRepository.findByLogin(auth.getName()));
+        operationRepository.save(operation);
+    }
+
+    @Override
+    @AfterReturning(
+            pointcut = "execution(* aajb.service.ParentServiceImpl.readParents(..))"
+    )
+    public void afterReadingParents(JoinPoint jp) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        Operation operation = new Operation();
+        operation.setType(OperationType.READ);
+        operation.setTime(new Date());
+        operation.setContent("Read Parents");
+        operation.setUser(userRepository.findByLogin(auth.getName()));
         operationRepository.save(operation);
     }
 }

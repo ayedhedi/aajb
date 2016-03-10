@@ -7,6 +7,7 @@ public enum OperationType {
     LOG_IN,
     LOG_OUT,
     CREATE,
+    READ,
     UPDATE,
     DELETE
 }

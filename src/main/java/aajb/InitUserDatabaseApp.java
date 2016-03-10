@@ -1,11 +1,17 @@
 package aajb;
 
 import aajb.domain.user.User;
-import aajb.repository.ParentRepository;
-import aajb.domain.school.Parent;
 import aajb.domain.user.UserProfileType;
 import aajb.repository.UserRepository;
+import aajb.service.RegistrationService;
 import aajb.service.SecurityService;
+import aajb.service.dto.ChequeDto;
+import aajb.service.dto.ParentDto;
+import aajb.service.dto.RegistrationDto;
+import aajb.service.dto.StudentDto;
+import aajb.service.exceptions.InvalidDataException;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,28 +19,37 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithUserDetails;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.*;
 
 /**
  * Created by ayed.h on 23/02/2016.
  */
 @SpringBootApplication
 @ComponentScan("aajb")
+@WithUserDetails("customUsername")
 public class InitUserDatabaseApp implements ApplicationContextAware {
-
+    private static int nbRegistration = 200;
     private static ApplicationContext applicationContext;
     private static SecurityService securityService;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         SpringApplication.run(InitUserDatabaseApp.class, args);
         UserRepository userRepository = applicationContext.getBean(UserRepository.class);
+        RegistrationService registrationService = applicationContext.getBean(RegistrationService.class);
+        UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
 
         Environment environment = applicationContext.getEnvironment();
         securityService = applicationContext.getBean(SecurityService.class);
+
 
         String initUsersData = environment.getProperty("users.initData");
         Arrays.asList(initUsersData.split(";")).stream().filter(user ->
@@ -48,6 +63,25 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
             userRepository.save(user);
         });
 
+        UserDetails userDetails = userDetailsService.loadUserByUsername("aaa");
+        Authentication auth =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+
+        //create registration
+        for(int i=0;i<nbRegistration;i++) {
+            RegistrationDto registrationDto = createRandomRegistration();
+            try {
+                registrationService.createRegistration(registrationDto);
+            } catch (InvalidDataException e) {
+                e.printStackTrace();
+            }
+            StringWriter sw = new StringWriter();
+            (new ObjectMapper()).writeValue(sw,registrationDto);
+            System.out.println(sw.toString());
+        }
+
         SpringApplication.exit(applicationContext);
     }
 
@@ -55,6 +89,82 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         InitUserDatabaseApp.applicationContext = applicationContext;
     }
+
+    private static RegistrationDto createRandomRegistration() {
+        RegistrationDto registrationDto = new RegistrationDto();
+        registrationDto.setFirstParent(createRandomParent());
+        if (Math.random()>0.5) {
+            registrationDto.setSecondParent(createRandomParent());
+        }
+        int nbStudent = (int)(Math.random()*5) + 1;
+        registrationDto.setStudents(new HashSet<>());
+        while(registrationDto.getStudents().size()<nbStudent) {
+            registrationDto.getStudents().add(createRandomStudent());
+        }
+        int nbCheck = (int)(Math.random()*10) + 1;
+        registrationDto.setCheques(new HashSet<>());
+        while(registrationDto.getCheques().size()<nbCheck) {
+            registrationDto.getCheques().add(createRandomOrder());
+        }
+        return registrationDto;
+    }
+
+    private static ChequeDto createRandomOrder() {
+        ChequeDto dto = new ChequeDto();
+        dto.setAmount((int)(Math.random()*200) + 1);
+        dto.setBankName((Math.random()>0.5?(banks[(int)(Math.random()*banks.length)]):null));
+        dto.setNumber((Math.random()> 0.4 ? createSsn(): null));
+        dto.setAdjustableDate(new Date((long)(Math.random()*(1483052400000L-1448838000000L)) + 1448838000000L));
+        if (dto.getAdjustableDate().before(new Date())) {
+            dto.setAdjust(true);
+            dto.setAdjustedDate(new Date((long)(Math.random()*(new Date().getTime()-dto.getAdjustableDate().getTime()))
+                    + dto.getAdjustableDate().getTime()));
+        }
+        dto.setRemarks("Nothing ... !!");
+        return dto;
+    }
+
+    private static StudentDto createRandomStudent() {
+        StudentDto dto = new StudentDto();
+        dto.setFirstName(firstNames[(int)(Math.random()*firstNames.length)]);
+        dto.setLastName(lastNames[(int)(Math.random()*lastNames.length)]);
+        dto.setGender((Math.random()>0.5?"MALE":"FEMALE"));
+        dto.setClassName(classNames[(int)(Math.random()*classNames.length)]);
+        dto.setBirthDate(new Date((long)(Math.random()*(maxDate-minDate)) + minDate));
+        return dto;
+    }
+
+    private static ParentDto createRandomParent() {
+        ParentDto dto = new ParentDto();
+        dto.setFirstName(firstNames[(int)(Math.random()*firstNames.length)]);
+        dto.setLastName(lastNames[(int)(Math.random()*lastNames.length)]);
+        dto.setGender((Math.random()>0.5?"MALE":"FEMALE"));
+        dto.setEmail(dto.getFirstName().toLowerCase()+"."+dto.getLastName().toLowerCase()+emails[(int)(Math.random()*emails.length)]);
+        dto.setTel(Math.random()>0.5?createRandTel():null);
+        dto.setTelPro(Math.random() > 0.5 ? createRandTel() : null);
+        dto.setTelGsm(Math.random() > 0.5 ? createRandTel() : null);
+        dto.setSsn(Math.random()> 0.4 ? createSsn(): null);
+        dto.setCaf(Math.random()>6 ? (int)(Math.random()*10000):0);
+        dto.setJob(Math.random()>0.4?jobs[(int)(Math.random()*jobs.length)]:null);
+        return dto;
+    }
+
+    private static String createRandTel() {
+        String tel = "06";
+        while (tel.length()!=10){
+            tel += (int)(Math.random()*10);
+        }
+        return tel;
+    }
+
+    private static String createSsn() {
+        String ssn = "";
+        while(ssn.length()!=13) {
+            ssn += (int)(Math.random()*10);
+        }
+        return ssn;
+    }
+
 
     private static UserProfileType[] getTypes(String[] tab) {
         if (tab==null){
@@ -89,4 +199,34 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
         }
         return user;
     }
+
+    private static final long minDate = 631148400000L;
+    private static final long maxDate = 1356908400000L;
+    private static final String[] classNames = {"GA","MA","PA","GB","MB","GC","MC"};
+    private static final String[] firstNames = {"Noah","Liam", "Mason","Jacob","William","Ethan","Michael",
+            "Alexander","James","Daniel","Elijah","Benjamin","Logan","Aiden"};
+    private static final String[] lastNames = {"SMITH", "JOHNSON", "WILLIAMS", "JONES", "BROWN", "DAVIS", "WILSON"};
+    private static final String[] emails = {"@post.lu","@gmail.com","@rtl.lu","@yahoo.fr","@msn.fr"};
+    private static final String[] jobs = {
+            "Ambulances",
+            "Blanchisserie et pressing (sauf libre-service)",
+            "Coiffure",
+            "Compositions florales",
+            "Contrôle technique",
+            "Cordonnerie et réparation d'articles personnels et domestiques",
+            "Déménagement",
+            "Embaumement, soins mortuaires",
+            "Entretien et réparation de machines de bureau et de matériel informatique",
+            "Etalage, décoration",
+            "Finition et restauration de meubles, dorure, encadrement",
+            "Maréchalerie",
+            "Pose d'affiches, travaux à façon, conditionnement à façon",
+            "Ramonage, nettoyage, entretien de fosses septiques et désinsectisation",
+            "Réparation automobile cycles et motocycles",
+            "Réparation d'objets d'art",
+            "Spectacle de marionnettes",
+            "Soins de beauté"
+    };
+    private static final String[] banks = {"BNP","LAPOSTE","CIC","LCL","CA","CM"};
+
 }

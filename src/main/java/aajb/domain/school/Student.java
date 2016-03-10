@@ -49,4 +49,7 @@ public class Student extends Person {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SecondParent_ID")
     private Parent secondParent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Registration registration;
 }

@@ -2,10 +2,14 @@ package aajb.service.dto;
 
 import aajb.domain.school.Gender;
 import aajb.domain.school.Parent;
+import aajb.domain.school.Registration;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ayed.h on 24/02/2016.
@@ -20,9 +24,11 @@ public class ParentDto {
     private String tel;
     private String telGsm;
     private String telPro;
-    private long ssn;     //social security number
+    private String ssn;     //social security number
     private int caf;
     private String address;
+    private String job;
+    private List<String> registrations;
 
     public static Parent asParent(ParentDto dto) {
         Parent parent = new Parent();
@@ -36,6 +42,7 @@ public class ParentDto {
         parent.setTelPro(dto.telPro);
         parent.setSsn(dto.ssn);
         parent.setCaf(dto.caf);
+        parent.setJob(dto.job);
         if (dto.address != null) {
             parent.setAddress(dto.address);
         }
@@ -54,8 +61,15 @@ public class ParentDto {
         dto.telPro = parent.getTelPro();
         dto.ssn=parent.getSsn();
         dto.caf=parent.getCaf();
+        dto.job=parent.getJob();
         if (parent.getAddress() != null) {
             dto.address = parent.getAddress();
+        }
+        if (parent.getRegistrations() != null) {
+            dto.registrations = new ArrayList<>();
+            parent.getRegistrations().forEach(registration ->
+                dto.registrations.add(String.valueOf(registration.getId()))
+            );
         }
         return dto;
     }

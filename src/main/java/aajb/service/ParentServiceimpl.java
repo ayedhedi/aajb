@@ -12,6 +12,9 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class ParentServiceImpl implements ParentService {
 
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public Parent createParent(Parent parent) throws InvalidDataException{
 
         logger.info("Creating new Parent ... "+parent.getFirstName());
@@ -75,6 +79,52 @@ public class ParentServiceImpl implements ParentService {
             logger.warn("Cannot save Object to Parent database !!");
             throw new InvalidDataException(env.getProperty("api.errorcode.internalError"),"Internal Error");
         }
+    }
+
+    @Override
+    public ParentDto createParent(ParentDto parentDto) throws InvalidDataException {
+        Parent parent = ParentDto.asParent(parentDto);
+        parent = createParent(parent);
+        return ParentDto.asParentDto(parent);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public List<ParentDto> readParents() {
+        logger.info("looking for all parents");
+        Iterable<Parent> parents = parentRepository.findAll();
+        List<ParentDto> parentDtos = new ArrayList<>();
+        parents.forEach(parent ->
+            parentDtos.add(ParentDto.asParentDto(parent))
+        );
+
+        return parentDtos;
+    }
+
+    @Override
+    public List<ParentDto> readParents(int page, int size) throws InvalidDataException {
+        logger.info("looking for page "+page+" of size "+size);
+        if (page<0 || page > getNumberOfPage(size)) {
+            throw new InvalidDataException();
+        }
+
+        List<ParentDto> parentDtos = new ArrayList<>();
+        Page<Parent> parentPage = parentRepository.findAll(new PageRequest(page, size));
+        parentPage.forEach(parent ->
+            parentDtos.add(ParentDto.asParentDto(parent))
+        );
+
+        return parentDtos;
+    }
+
+    @Override
+    public int getNumberOfPage(int pageSize) throws InvalidDataException {
+        if (pageSize<1) {
+            throw new InvalidDataException((env.getProperty("api.errorcode.invalidPageSize")),
+                    "page size cannot be less than 1: "+pageSize);
+        }
+        long count = parentRepository.count();
+        return pageSize==count?1:((int)(count/pageSize) + 1);
     }
 
     @Override

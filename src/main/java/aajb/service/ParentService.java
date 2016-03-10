@@ -11,6 +11,10 @@ import java.util.List;
  */
 public interface ParentService {
     Parent createParent(Parent parent) throws InvalidDataException;
+    ParentDto createParent(ParentDto parentDto) throws InvalidDataException;
+    List<ParentDto> readParents();
+    List<ParentDto> readParents(int page,int size) throws InvalidDataException;
+    int getNumberOfPage(int pageSize) throws InvalidDataException;
     Parent findParentByEmail(String email);
     Parent deleteParent(int id) throws InvalidDataException;
     List<ParentDto> findParents(String match);

@@ -1,10 +1,12 @@
 package aajb.domain.school;
 
+import aajb.domain.school.payment.Cheque;
 import lombok.*;
 import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -32,9 +34,14 @@ public class Registration {
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     private Parent secondParent;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "registration")
     private Set<Student> students;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date dateTime;
+
+    @OneToMany(mappedBy = "registration",cascade = CascadeType.ALL)
+    private List<Cheque> cheques;
+
+    private String userName;
 }
