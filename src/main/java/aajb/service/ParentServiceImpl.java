@@ -102,29 +102,23 @@ public class ParentServiceImpl implements ParentService {
     }
 
     @Override
-    public List<ParentDto> readParents(int page, int size) throws InvalidDataException {
+    public Page<Parent> readParents(String search, int page, int size) throws InvalidDataException {
         logger.info("looking for page "+page+" of size "+size);
-        if (page<0 || page > getNumberOfPage(size)) {
+        if (page<0) {
             throw new InvalidDataException();
         }
 
-        List<ParentDto> parentDtos = new ArrayList<>();
-        Page<Parent> parentPage = parentRepository.findAll(new PageRequest(page, size));
-        parentPage.forEach(parent ->
-            parentDtos.add(ParentDto.asParentDto(parent))
-        );
-
-        return parentDtos;
-    }
-
-    @Override
-    public int getNumberOfPage(int pageSize) throws InvalidDataException {
-        if (pageSize<1) {
-            throw new InvalidDataException((env.getProperty("api.errorcode.invalidPageSize")),
-                    "page size cannot be less than 1: "+pageSize);
+        //calls the right method depends on the content of "search" parameter
+        Page<Parent> parentPage;
+        if (search!=null){
+            search = "%"+search+"%";
+            parentPage = parentRepository.findByFirstNameLikeOrLastNameLikeOrEmailLike
+                    (search, search, search, new PageRequest(page, size));
+        }else {
+            parentPage = parentRepository.findAll(new PageRequest(page, size));
         }
-        long count = parentRepository.count();
-        return pageSize==count?1:((int)(count/pageSize) + 1);
+
+        return parentPage;
     }
 
     @Override

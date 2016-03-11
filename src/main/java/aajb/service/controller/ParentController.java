@@ -9,12 +9,14 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -48,6 +50,7 @@ public class ParentController {
 
     @RequestMapping(method = RequestMethod.GET, value = "/paged")
     public HashMap<String, Object> getParentsPage(
+            @RequestParam(required = false) final String search,
             @RequestParam int page,
             @RequestParam int size,
             HttpServletResponse response
@@ -58,9 +61,16 @@ public class ParentController {
         results.put("authors", environment.getProperty("api.authors"));
         results.put("date", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 
+        List<ParentDto> parentDtos = new ArrayList<>();
+
+
         try {
-            int numberOfPage = parentService.getNumberOfPage(size);
-            List<ParentDto> parentDtos = parentService.readParents(page, size);
+            Page<Parent> parentPage = parentService.readParents(search, page, size);
+            parentPage.forEach(parent ->
+                            parentDtos.add(ParentDto.asParentDto(parent))
+            );
+            int numberOfPage = parentPage.getTotalPages();
+
             int nextPage=(page==numberOfPage?0:page+1);
             results.put("page",page);
             results.put("next",nextPage);

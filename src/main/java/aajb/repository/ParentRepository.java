@@ -1,6 +1,8 @@
 package aajb.repository;
 
 import aajb.domain.school.Parent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
@@ -13,4 +15,5 @@ import java.util.Optional;
 public interface ParentRepository extends PagingAndSortingRepository<Parent,Integer> {
     Optional<Parent> findByEmail(String email);
     List<Parent> findByFirstNameLikeOrLastNameLike(String firstName,String lastName);
+    Page<Parent> findByFirstNameLikeOrLastNameLikeOrEmailLike(String firstName,String lastName,String email, Pageable pageable);
 }
