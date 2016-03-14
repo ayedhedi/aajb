@@ -35,7 +35,9 @@ import java.util.Date;
 @PrimaryKeyJoinColumn(name="ID")
 public class Student extends Person {
 
-    private String className;
+    @Enumerated(value = EnumType.STRING)
+    private ClassName className;
+
     private String remarks;
 
     @Column(nullable = false)

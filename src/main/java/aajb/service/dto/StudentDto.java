@@ -1,5 +1,6 @@
 package aajb.service.dto;
 
+import aajb.domain.school.ClassName;
 import aajb.domain.school.Gender;
 import aajb.domain.school.Student;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,7 @@ public class StudentDto {
         student.setFirstName(dto.firstName);
         student.setLastName(dto.lastName);
         student.setGender(Gender.getGender(dto.getGender()));
-        student.setClassName(dto.className);
+        student.setClassName(ClassName.getClassName(dto.className));
         student.setBirthDate(dto.birthDate);
         student.setRemarks(dto.remarks);
         return student;
@@ -47,7 +48,7 @@ public class StudentDto {
         dto.firstName = student.getFirstName();
         dto.lastName = student.getLastName();
         dto.gender = student.getGender().toString();
-        dto.className = student.getClassName();
+        dto.className = student.getClassName().toString();
         dto.birthDate = student.getBirthDate();
         dto.remarks = student.getRemarks();
         return dto;

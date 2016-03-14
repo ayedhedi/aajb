@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import java.util.HashSet;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
 @WebAppConfiguration
+@WithMockUser(username = "aaa", password = "aaa")
 public class RegistrationServiceImplTest {
 
     public static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
@@ -46,6 +48,7 @@ public class RegistrationServiceImplTest {
     @Test
     @Transactional(rollbackFor = {Exception.class})
     public void testCreateRegistrationWithExistingParents() throws Exception {
+
         ParentDto pDto = new ParentDto();
         pDto.setFirstName("firstp");
         pDto.setLastName("lastp");
@@ -85,7 +88,7 @@ public class RegistrationServiceImplTest {
         Assert.notNull(s1.getId());
 
         sDto = new StudentDto();
-        sDto.setClassName("BA");
+        sDto.setClassName("GB");
         sDto.setFirstName("sdfsdfsddf");
         sDto.setLastName("reyery");
         sDto.setBirthDate(sdf.parse("11/11/2009"));
@@ -101,13 +104,16 @@ public class RegistrationServiceImplTest {
         chequeDto1.setAdjustableDate(new Date());
         chequeDto1.setRemarks("No remarks");
         chequeDto1.setAmount(124);
-        chequeDto1.setBankName("BA");
+        chequeDto1.setBankName("GB");
         chequeDto1.setNumber("122sd2552sd");
+        chequeDto1.setAdjustable(true);
+        chequeDto1.setAdjustableDate(new Date());
 
         ChequeDto chequeDto2 = new ChequeDto();
         chequeDto2.setAdjustableDate(new Date());
         chequeDto2.setRemarks("No remarks");
-        chequeDto2.setAmount(584786);
+        chequeDto2.setAmount(786);
+        chequeDto2.setAdjustable(false);
 
         RegistrationDto registrationDto = new RegistrationDto();
         ParentDto p1Dto = new ParentDto();
@@ -182,7 +188,7 @@ public class RegistrationServiceImplTest {
         s1Dto.setRemarks("Droit Image");
 
         StudentDto s2Dto = new StudentDto();
-        s2Dto.setClassName("BA");
+        s2Dto.setClassName("GB");
         s2Dto.setFirstName("sdfsdfsddf");
         s2Dto.setLastName("reyery");
         s2Dto.setBirthDate(sdf.parse("11/11/2009"));
@@ -192,7 +198,7 @@ public class RegistrationServiceImplTest {
         chequeDto1.setAdjustableDate(new Date());
         chequeDto1.setRemarks("No remarks");
         chequeDto1.setAmount(124);
-        chequeDto1.setBankName("BA");
+        chequeDto1.setBankName("GB");
         chequeDto1.setNumber("122sd2552sd");
 
         ChequeDto chequeDto2 = new ChequeDto();

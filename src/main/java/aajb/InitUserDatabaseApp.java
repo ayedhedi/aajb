@@ -146,7 +146,9 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
         dto.setFirstName(firstNames[(int)(Math.random()*firstNames.length)]);
         dto.setLastName(lastNames[(int)(Math.random()*lastNames.length)]);
         dto.setGender((Math.random()>0.5?"MALE":"FEMALE"));
-        dto.setEmail(dto.getFirstName().toLowerCase()+"."+dto.getLastName().toLowerCase()+emails[(int)(Math.random()*emails.length)]);
+        dto.setEmail(dto.getFirstName().toLowerCase()+"."+dto.getLastName().toLowerCase()+"_"
+                +String.valueOf(chars.charAt((int)(Math.random()*chars.length())))+emails[(int)(Math.random()*emails.length)]);
+
         dto.setTel(Math.random()>0.5?createRandTel():null);
         dto.setTelPro(Math.random() > 0.5 ? createRandTel() : null);
         dto.setTelGsm(Math.random() > 0.5 ? createRandTel() : null);
@@ -211,11 +213,11 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
     private static final long maxDate = 1356908400000L;
     private static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     private static final String[] dates = {"12/01/2016","01/01/2017","03/01/2017","04/01/2017","05/01/2017"};
-    private static final String[] classNames = {"GA","MA","PA","GB","MB","GC","MC"};
+    private static final String[] classNames = {"GA","GB","MA","MB","MC","PA","PB","PC","PD"};
     private static final String[] firstNames = {"Noah","Liam", "Mason","Jacob","William","Ethan","Michael",
             "Alexander","James","Daniel","Elijah","Benjamin","Logan","Aiden"};
     private static final String[] lastNames = {"SMITH", "JOHNSON", "WILLIAMS", "JONES", "BROWN", "DAVIS", "WILSON"};
-    private static final String[] emails = {"@post.lu","@gmail.com","@rtl.lu","@yahoo.fr","@msn.fr"};
+    private static final String[] emails = {"@uff.fr","@post.lu","@gmail.com","@rtl.lu","@yahoo.fr","@msn.fr","@drr.fr","@zerty.fr","@ghh.com"};
     private static final String[] jobs = {
             "Ambulances",
             "Blanchisserie et pressing (sauf libre-service)",
@@ -237,5 +239,6 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
             "Soins de beauté"
     };
     private static final String[] banks = {"BNP","LAPOSTE","CIC","LCL","CA","CM"};
+    private static final String chars = "azertyuiopmlkjhgfdsqwxcvbn";
 
 }
