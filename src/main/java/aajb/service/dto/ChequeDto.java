@@ -17,9 +17,8 @@ public class ChequeDto {
     private int amount;
     private String bankName;
     private String number;
-    private boolean adjust;
+    private boolean adjustable;
     private Date adjustableDate;
-    private Date adjustedDate;
     private String remarks;
     private int registration;
 
@@ -29,8 +28,7 @@ public class ChequeDto {
         chequeDto.amount = cheque.getAmount();
         chequeDto.bankName = cheque.getBankName();
         chequeDto.number = cheque.getNumber();
-        chequeDto.adjust = cheque.isAdjust();
-        chequeDto.adjustedDate = cheque.getAdjustedDate();
+        chequeDto.adjustable = cheque.isAdjustable();
         chequeDto.adjustableDate = cheque.getAdjustableDate();
         chequeDto.remarks = cheque.getRemarks();
         chequeDto.registration = cheque.getRegistration().getId();
@@ -42,9 +40,8 @@ public class ChequeDto {
         cheque.setAmount(chequeDto.getAmount());
         cheque.setBankName(chequeDto.getBankName());
         cheque.setNumber(chequeDto.getNumber());
-        cheque.setAdjust(chequeDto.isAdjust());
+        cheque.setAdjustable(chequeDto.isAdjustable());
         cheque.setAdjustableDate(chequeDto.getAdjustableDate());
-        cheque.setAdjustedDate(chequeDto.getAdjustedDate());
         cheque.setRemarks(chequeDto.getRemarks());
         return cheque;
     }

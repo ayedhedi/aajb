@@ -24,10 +24,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -35,7 +36,6 @@ import java.util.*;
  */
 @SpringBootApplication
 @ComponentScan("aajb")
-@WithUserDetails("customUsername")
 public class InitUserDatabaseApp implements ApplicationContextAware {
     private static int nbRegistration = 200;
     private static ApplicationContext applicationContext;
@@ -114,12 +114,19 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
         dto.setAmount((int)(Math.random()*200) + 1);
         dto.setBankName((Math.random()>0.5?(banks[(int)(Math.random()*banks.length)]):null));
         dto.setNumber((Math.random()> 0.4 ? createSsn(): null));
-        dto.setAdjustableDate(new Date((long)(Math.random()*(1483052400000L-1448838000000L)) + 1448838000000L));
-        if (dto.getAdjustableDate().before(new Date())) {
-            dto.setAdjust(true);
-            dto.setAdjustedDate(new Date((long)(Math.random()*(new Date().getTime()-dto.getAdjustableDate().getTime()))
-                    + dto.getAdjustableDate().getTime()));
+
+        if (Math.random() < 0.1) {
+            dto.setAdjustable(false);
+        }else {
+            dto.setAdjustable(true);
+            try {
+                dto.setAdjustableDate(sdf.parse(dates[(int)(Math.random()* dates.length)]));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
         }
+
+
         dto.setRemarks("Nothing ... !!");
         return dto;
     }
@@ -202,6 +209,8 @@ public class InitUserDatabaseApp implements ApplicationContextAware {
 
     private static final long minDate = 631148400000L;
     private static final long maxDate = 1356908400000L;
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+    private static final String[] dates = {"12/01/2016","01/01/2017","03/01/2017","04/01/2017","05/01/2017"};
     private static final String[] classNames = {"GA","MA","PA","GB","MB","GC","MC"};
     private static final String[] firstNames = {"Noah","Liam", "Mason","Jacob","William","Ethan","Michael",
             "Alexander","James","Daniel","Elijah","Benjamin","Logan","Aiden"};

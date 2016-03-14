@@ -23,19 +23,17 @@ public class Cheque {
     private int amount;
     private String bankName;
     private String number;
-    private boolean adjust;
+
+    /**
+     * if equals to false then adjustableDate and adjustedDate will be null
+     */
+    private boolean adjustable;
 
     /**
      * date where the check could be adjusted
      */
     @Temporal(TemporalType.DATE)
     private Date adjustableDate;
-
-    /**
-     * date where the check is adjusted (NULL it adjust = false)
-     */
-    @Temporal(TemporalType.DATE)
-    private Date adjustedDate;
 
     private String remarks;
 

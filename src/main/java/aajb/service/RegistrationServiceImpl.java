@@ -24,10 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ayed.h on 01/03/2016.
@@ -157,7 +154,6 @@ public class RegistrationServiceImpl implements RegistrationService {
                 }
 
                 Cheque cheque = ChequeDto.toCheck(chequeDto);
-                cheque.setAdjust(false);
                 cheque.setRegistration(registration);
                 registration.getCheques().add(cheque);
             }
@@ -181,6 +177,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration = registrationRepository.save(registration);
 
         return RegistrationDto.asDto(registration);
+    }
+
+    @Override
+    public List<RegistrationDto> findRegistrationsByParentId(int parentId) {
+        List<Registration> registrationList = registrationRepository.findByParentsId(parentId);
+        List<RegistrationDto> registrationDtoList = new ArrayList<>();
+        registrationList.forEach(registration ->
+            registrationDtoList.add(RegistrationDto.asDto(registration))
+        );
+        return registrationDtoList;
     }
 
     @Override
